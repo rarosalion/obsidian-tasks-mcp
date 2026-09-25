@@ -304,3 +304,47 @@ def test_audit_ignores_cards_without_a_link(service, vault):
         for item in items
     )
     assert not any("Plain card" in item for item in report["broken_links"])
+
+
+def test_delete_task_removes_card_and_note(service, vault):
+    before = vault.files["Board.md"]
+    result = service.delete_task("Delta Task")
+    assert result["note_deleted"] == "Tasks/Delta Task.md"
+    assert "Tasks/Delta Task.md" not in vault.files
+    assert vault.files["Board.md"].rstrip("\n") == before.replace("- [ ] [[Delta Task]]\n", "")
+
+
+def test_delete_task_can_keep_the_note(service, vault):
+    result = service.delete_task("Delta Task", delete_note=False)
+    assert result["note_kept"] == "Tasks/Delta Task.md"
+    assert "Tasks/Delta Task.md" in vault.files
+    assert "Delta Task" not in lane_titles(vault, "Blocked or Waiting")
+
+
+def test_delete_task_without_a_note_only_removes_the_card(service, vault):
+    result = service.delete_task("Plain card")
+    assert "note_deleted" not in result and "note_kept" not in result
+    assert "Plain card without a note" not in lane_titles(vault, "Done")
+
+
+def test_delete_task_refuses_when_other_notes_link_to_it(service, vault):
+    vault.files["Tasks/Alpha Task.md"] += "\nSee also [[Beta Task]].\n"
+    with pytest.raises(ValueError, match="broken links"):
+        service.delete_task("Beta Task")
+    assert "Tasks/Beta Task.md" in vault.files
+    assert "Beta Task" in lane_titles(vault, "To Do")
+    result = service.delete_task("Beta Task", force=True)
+    assert result["broken_links_left_in"] == ["Tasks/Alpha Task.md"]
+    assert "Tasks/Beta Task.md" not in vault.files
+
+
+def test_delete_task_keeps_a_note_another_card_still_uses(service, vault):
+    vault.files["Other.md"] = "---\nkanban-plugin: board\n---\n\n## Home\n\n- [ ] [[Alpha Task]]\n"
+    result = service.delete_task("Alpha Task", board="Board")
+    assert result["note_kept"] == "another card links to the same note"
+    assert "Tasks/Alpha Task.md" in vault.files
+
+
+def test_delete_task_unknown(service):
+    with pytest.raises(ValueError, match="no card matching"):
+        service.delete_task("Nope")

@@ -51,6 +51,10 @@ class Vault(Protocol):
 
     def find_by_name(self, name: str) -> list[str]: ...
 
+    def find_linking_to(self, path: str) -> list[str]: ...
+
+    def delete(self, path: str) -> None: ...
+
 
 class RestVault:
     """Vault access through the Obsidian Local REST API plugin."""
@@ -159,6 +163,15 @@ class RestVault:
                 ]
             }
         )
+
+    def find_linking_to(self, path: str) -> list[str]:
+        return self._search({"in": [path, {"var": "links"}]})
+
+    def delete(self, path: str) -> None:
+        response = self._http.delete(self._url(path))
+        if response.status_code == 404:
+            raise NotFoundError(path)
+        response.raise_for_status()
 
 
 def _escape(text: str) -> str:

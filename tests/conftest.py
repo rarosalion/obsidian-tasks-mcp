@@ -158,6 +158,15 @@ class FakeVault:
     def find_by_name(self, name: str) -> list[str]:
         return [p for p in self.files if p.rsplit("/", 1)[-1] == f"{name}.md"]
 
+    def find_linking_to(self, path: str) -> list[str]:
+        stem = path.rsplit("/", 1)[-1].removesuffix(".md")
+        return [p for p, text in self.files.items() if f"[[{stem}]]" in text]
+
+    def delete(self, path: str) -> None:
+        if path not in self.files:
+            raise NotFoundError(path)
+        del self.files[path]
+
 
 @pytest.fixture
 def vault() -> FakeVault:

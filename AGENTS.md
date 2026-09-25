@@ -20,6 +20,7 @@ This repo is public. Never commit hostnames, domains, IP addresses, API keys, or
 
 - A body-only change is written with an atomic `PATCH` on the document root; a frontmatter change falls back to a version check followed by `PUT`, which leaves a very small race window.
 - `PATCH` on the document root appends a trailing newline when the file lacked one.
+- `delete_task` is the only destructive tool. It checks for other notes linking to the note (`Vault.find_linking_to`, a JsonLogic search over `links`) before removing anything, and removes the card before deleting the note so a failure leaves at worst an orphaned note.
 - Adding a subtask does not count as starting a task, so it never moves a card; a ticked subtask or a log entry does.
 
 ## Commands

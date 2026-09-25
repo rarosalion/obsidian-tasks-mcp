@@ -20,10 +20,13 @@ def test_registers_every_tool_with_read_only_hints(service):
         "add_subtask",
         "append_log",
         "set_task_fields",
+        "delete_task",
     }
     for name in ("list_boards", "list_tasks", "get_task", "audit_boards"):
         assert tools[name].annotations.read_only_hint is True
     assert not tools["move_task"].annotations or not tools["move_task"].annotations.read_only_hint
+    assert tools["delete_task"].annotations.destructive_hint is True
+    assert all(t.description for t in tools.values())
 
 
 def test_expected_failures_reach_the_caller_as_tool_errors(service):

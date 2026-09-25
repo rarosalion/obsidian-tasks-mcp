@@ -457,6 +457,54 @@ class TaskService:
         self._edit(path, apply)
         return {"title": hit.card.title, "updated": applied}
 
+    def delete_task(
+        self,
+        title: str,
+        board: str | None = None,
+        delete_note: bool = True,
+        force: bool = False,
+    ) -> dict:
+        hit = self._locate(title, board)
+        path = self._card_note(hit)
+        result: dict[str, Any] = {
+            "title": hit.card.title,
+            "board": self._names([hit.board])[0],
+            "lane": hit.lane,
+            "card_removed": True,
+        }
+        remove_note = False
+        if path and delete_note:
+            shared = sum(
+                len(self._load_board(b)[1].find(hit.card.title)) for b in self._board_paths()
+            )
+            if shared > 1:
+                result["note_kept"] = "another card links to the same note"
+            else:
+                boards = set(self._board_paths())
+                others = [
+                    p for p in self.vault.find_linking_to(path) if p != path and p not in boards
+                ]
+                if others and not force:
+                    raise ValueError(
+                        f"{path} is linked from {others}; deleting it would leave broken links. "
+                        "Pass force=True to delete anyway, or delete_note=False to keep the note."
+                    )
+                remove_note = True
+                if others:
+                    result["broken_links_left_in"] = others
+        elif path:
+            result["note_kept"] = path
+
+        def remove(board: Board) -> None:
+            lane, card = self._find_card(board, hit.card.title)
+            board.remove_card(lane, card)
+
+        self._edit_board(hit.board, remove)
+        if remove_note and path:
+            self.vault.delete(path)
+            result["note_deleted"] = path
+        return result
+
     def audit_boards(self, include_closed: bool = False, limit: int = 50) -> dict:
         boards = {p: self._load_board(p)[1] for p in self._board_paths()}
         folders = sorted({self._folder(b.settings()) for b in boards.values()} - {""})

@@ -1,4 +1,5 @@
 import functools
+import logging
 import os
 import sys
 
@@ -63,6 +64,7 @@ def build_server(service: TaskService) -> MCPServer:
 
 
 def main() -> None:
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     build_server(build_service()).run()
 
 

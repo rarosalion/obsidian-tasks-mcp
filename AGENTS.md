@@ -23,6 +23,7 @@ This repo is public. Never commit hostnames, domains, IP addresses, API keys, or
 - `delete_task` is the only destructive tool. It checks for other notes linking to the note (`Vault.find_linking_to`, a JsonLogic search over `links`) before removing anything, and removes the card before deleting the note so a failure leaves at worst an orphaned note.
 - Adding a subtask does not count as starting a task, so it never moves a card; a ticked subtask or a log entry does.
 - A board with no `new-note-folder` setting cannot create tasks: `create_task` raises instead of writing to the vault root, and `audit_boards` lists such boards under `boards_missing_note_folder`.
+- `Tags` is always written as a YAML block list (one `  - tag` line each), because Obsidian only treats that form as tags. `create_task` and `set_task_fields` take a list and reject any item containing anything but letters, numbers, `_`, `-` and `/`. Reads also accept an inline list or a comma string so legacy notes still parse, and `audit_boards` reports those as `tags_not_list`. `frontmatter.set_value` and `set_list` replace a key's indented continuation lines along with the key, so rewriting a list never leaves orphaned items.
 
 ## Commands
 

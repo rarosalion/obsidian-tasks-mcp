@@ -92,6 +92,14 @@ def test_create_task_rejects_bad_input(service):
         service.create_task("X", lane="Nowhere")
 
 
+def test_create_task_requires_a_note_folder(service, vault):
+    vault.files["Board.md"] = BOARD.replace(',"new-note-folder":"Tasks"', "")
+    with pytest.raises(ValueError, match="new-note-folder"):
+        service.create_task("Rootless")
+    assert "Rootless.md" not in vault.files
+    assert "Rootless" not in Board.parse(vault.files["Board.md"]).lane("To Do").cards
+
+
 def test_create_task_refuses_to_overwrite_an_existing_note(service, vault):
     with pytest.raises(ExistsError):
         service.create_task("Stray Note")
@@ -253,6 +261,12 @@ def test_audit_reports_problems(service):
     assert "done_missing_completed_on" not in report
     assert "template_problems" not in report
     assert "Alpha Task" not in report.get("started_but_in_todo", [])
+
+
+def test_audit_flags_board_without_note_folder(service, vault):
+    assert "boards_missing_note_folder" not in service.audit_boards()
+    vault.files["Board.md"] = BOARD.replace(',"new-note-folder":"Tasks"', "")
+    assert service.audit_boards()["boards_missing_note_folder"] == ["Board"]
 
 
 def test_audit_flags_started_task_in_todo(service, vault):

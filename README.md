@@ -18,7 +18,7 @@ A generic vault MCP server can read and patch files, but keeping a board tidy ta
 | `OBSIDIAN_API_KEY` | yes | The plugin's API key. |
 | `OBSIDIAN_TASKS_DEFAULT_BOARD` | no | Board (file name without `.md`) used when a tool call does not name one. With exactly one board in the vault it is picked automatically. |
 
-Boards are discovered by their `kanban-plugin: board` frontmatter. Each board's own Kanban settings supply the note folder (`new-note-folder`) and the note template (`new-note-template`); without a template a built-in one is used.
+Boards are discovered by their `kanban-plugin: board` frontmatter. Each board's own Kanban settings supply the note folder (`new-note-folder`) and the note template (`new-note-template`); without a template a built-in one is used. A board with no `new-note-folder` cannot create tasks, so notes never land in the vault root by accident.
 
 ### Claude Code
 
@@ -43,7 +43,7 @@ claude mcp add obsidian-tasks \
 | `append_log` | Adds a dated entry to the note's Running Log. |
 | `set_task_fields` | Sets `Due By`, `Assigned to`, `Planned by`, `Tags` or `Completed On`. |
 | `delete_task` | Permanently removes a task's card and, by default, its note. Refuses when other notes link to the note (that would leave broken links) unless `force` is set; `delete_note=false` removes only the card; the note is kept if another card still links to it. To keep a record of an abandoned task, move it to a Cancelled lane instead. |
-| `audit_boards` | Read-only drift report: notes with no card, cards whose note is missing, duplicate cards, checkboxes that disagree with their lane, started tasks still in To Do, and notes that do not follow the template. |
+| `audit_boards` | Read-only drift report: boards with no `new-note-folder`, notes with no card, cards whose note is missing, duplicate cards, checkboxes that disagree with their lane, started tasks still in To Do, and notes that do not follow the template. |
 
 Recording work on a task that sits in a To Do lane (a ticked subtask or a log entry) moves it to In Progress, or to Blocked when the caller passes `blocked=true`. Cards in any other lane are never moved automatically.
 

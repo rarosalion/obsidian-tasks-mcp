@@ -266,7 +266,12 @@ class TaskService:
             if other_board.find(title):
                 raise ValueError(f"a card called {title!r} already exists on {other}")
         folder = self._folder(settings)
-        note_path = f"{folder}/{title}.md" if folder else f"{title}.md"
+        if not folder:
+            raise ValueError(
+                f"{self._names([path])[0]} has no new-note-folder setting; set it in the Kanban "
+                "plugin's board settings so new notes do not land in the vault root"
+            )
+        note_path = f"{folder}/{title}.md"
         template = None
         if settings.get("new-note-template"):
             try:
@@ -510,6 +515,9 @@ class TaskService:
         folders = sorted({self._folder(b.settings()) for b in boards.values()} - {""})
         listing = {p.lower(): p for folder in folders for p in self.vault.list_folder(folder)}
         report: dict[str, list] = {
+            "boards_missing_note_folder": [
+                self._names([p])[0] for p, b in boards.items() if not self._folder(b.settings())
+            ],
             "orphan_notes": [],
             "broken_links": [],
             "duplicate_cards": [],

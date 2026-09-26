@@ -70,7 +70,8 @@ TOOLS = (
     ),
     (
         "audit_boards",
-        "Read-only report of board drift: notes with no card, cards linking to a missing note, "
+        "Read-only report of board drift: boards with no new-note-folder, notes with no card, "
+        "cards linking to a missing note, "
         "duplicate cards, checkboxes that disagree with their lane, started tasks still in "
         "To Do, and open-lane notes that do not follow the template. Cards without a link are "
         "not reported. Fix findings with the other tools.",

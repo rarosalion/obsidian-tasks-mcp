@@ -220,11 +220,28 @@ def test_note_edits_need_a_note(service):
 
 
 def test_set_task_fields(service, vault):
-    result = service.set_task_fields("Alpha Task", due_by="2026-12-01", tags="net")
-    assert result["updated"] == {"Due By": "2026-12-01", "Tags": "net"}
+    result = service.set_task_fields("Alpha Task", due_by="2026-12-01", tags=["net", "#ops"])
+    assert result["updated"] == {"Due By": "2026-12-01", "Tags": ["net", "ops"]}
     text = vault.files["Tasks/Alpha Task.md"]
     assert frontmatter.get(text, "Due By") == "2026-12-01"
     assert frontmatter.get(text, "Assigned to") == "Sam"
+    assert frontmatter.get_list(text, "Tags") == ["net", "ops"]
+    assert "Tags:\n  - net\n  - ops\n" in text
+    assert service.get_task("Alpha Task")["tags"] == ["net", "ops"]
+    assert [t["title"] for t in service.list_tasks(tag="OPS")] == ["Alpha Task"]
+    assert service.list_tasks(tag="op") == []
+
+
+def test_set_task_fields_rejects_comma_string_tags(service):
+    with pytest.raises(ValueError, match="invalid tag"):
+        service.set_task_fields("Alpha Task", tags=["net, ops"])
+
+
+def test_audit_flags_plain_string_tags_in_any_lane(service, vault):
+    assert "tags_not_list" not in service.audit_boards()
+    text = vault.files["Tasks/Alpha Task.md"]
+    vault.files["Tasks/Alpha Task.md"] = frontmatter.set_value(text, "Tags", "a, b")
+    assert service.audit_boards()["tags_not_list"] == ["Alpha Task"]
 
 
 def test_conflicting_write_is_retried_against_fresh_content(service, vault):

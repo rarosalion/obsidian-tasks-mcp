@@ -36,6 +36,7 @@ Completed On:
 _HEADING = re.compile(r"^# (.+?)\s*$")
 _CHECKBOX = re.compile(r"^- \[([ xX])\] ?(.*)$")
 _COMMENT = re.compile(r"%%.*?%%", re.DOTALL)
+_TAG = re.compile(r"^[\w/-]+$")
 _DONE_SUFFIX = re.compile(r"\s*\(done \d{4}-\d{2}-\d{2}[^)]*\)\s*$")
 
 
@@ -172,6 +173,23 @@ def _replace_body(lines: list[str], name: str, body: list[str]) -> list[str]:
     return lines[: start + 1] + block + lines[end:]
 
 
+def normalize_tags(tags: list[str]) -> list[str]:
+    """Trim tags, drop a leading `#`, remove empties and duplicates, and reject unusable ones."""
+    result: list[str] = []
+    for raw in tags:
+        tag = raw.strip().lstrip("#").strip()
+        if not tag:
+            continue
+        if not _TAG.match(tag):
+            raise ValueError(
+                f"invalid tag {raw!r}: tags may only contain letters, numbers, _, - and /; "
+                "pass each tag as a separate list item"
+            )
+        if tag.lower() not in {t.lower() for t in result}:
+            result.append(tag)
+    return result
+
+
 def render_new(
     template: str | None,
     *,
@@ -180,12 +198,15 @@ def render_new(
     subtask_items: list[str],
     detailed_plan: str,
     questions: list[str],
+    tags: list[str] | None = None,
 ) -> str:
     text = _COMMENT.sub("", template or DEFAULT_TEMPLATE)
     text = re.sub(r"\n{3,}", "\n\n", text)
     for key, value in fields.items():
         if value:
             text = frontmatter.set_value(text, key, value)
+    if tags:
+        text = frontmatter.set_list(text, "Tags", normalize_tags(tags))
     lines = text.rstrip("\n").split("\n")
     lines = _replace_body(lines, "Summary", summary.strip().split("\n") if summary.strip() else [])
     tasks = [f"- [ ] {item}" for item in subtask_items] or ["- [ ]"]

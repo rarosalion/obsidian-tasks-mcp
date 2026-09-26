@@ -62,7 +62,8 @@ def test_append_log_in_existing_and_missing_section():
 def test_render_new_from_template_strips_comments():
     text = notes.render_new(
         TEMPLATE,
-        fields={"Assigned to": "Sam", "Planned by": "Claude", "Due By": "", "Tags": "x, y"},
+        fields={"Assigned to": "Sam", "Planned by": "Claude", "Due By": ""},
+        tags=["x", "#y"],
         summary="Do the work.",
         subtask_items=["One", "Two"],
         detailed_plan="",
@@ -71,7 +72,8 @@ def test_render_new_from_template_strips_comments():
     assert "%%" not in text
     assert frontmatter.get(text, "Assigned to") == "Sam"
     assert frontmatter.get(text, "Due By") == ""
-    assert frontmatter.get(text, "Tags") == "x, y"
+    assert frontmatter.get_list(text, "Tags") == ["x", "y"]
+    assert "Tags:\n  - x\n  - y\n" in text
     assert notes.section(text, "Summary") == "Do the work."
     assert [s.text for s in notes.subtasks(text)] == ["One", "Two"]
     assert notes.section(text, "Questions to Consider") == "- [ ] Which way?"
@@ -106,3 +108,9 @@ def test_problems_reports_deviations():
     found = notes.problems(partial)
     assert "frontmatter is missing 'Assigned to'" in found
     assert "missing section 'Subtasks'" in found
+
+
+def test_normalize_tags():
+    assert notes.normalize_tags([" a ", "#b", "", "A", "c/d"]) == ["a", "b", "c/d"]
+    with pytest.raises(ValueError, match="invalid tag"):
+        notes.normalize_tags(["a, b"])

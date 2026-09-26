@@ -41,7 +41,7 @@ claude mcp add obsidian-tasks \
 | `update_subtask` | Ticks or unticks a subtask by number or text, appending a dated note. |
 | `add_subtask` | Adds a subtask to a note. |
 | `append_log` | Adds a dated entry to the note's Running Log. |
-| `set_task_fields` | Sets `Due By`, `Assigned to`, `Planned by`, `Tags` or `Completed On`. |
+| `set_task_fields` | Sets `Due By`, `Assigned to`, `Planned by`, `Tags` (a list) or `Completed On`. |
 | `delete_task` | Permanently removes a task's card and, by default, its note. Refuses when other notes link to the note (that would leave broken links) unless `force` is set; `delete_note=false` removes only the card; the note is kept if another card still links to it. To keep a record of an abandoned task, move it to a Cancelled lane instead. |
 | `audit_boards` | Read-only drift report: boards with no `new-note-folder`, notes with no card, cards whose note is missing, duplicate cards, checkboxes that disagree with their lane, started tasks still in To Do, and notes that do not follow the template. |
 
@@ -51,7 +51,7 @@ Recording work on a task that sits in a To Do lane (a ticked subtask or a log en
 
 Lanes are recognised by name, case-insensitively: To Do, In Progress, Blocked or Waiting (or Blocked, Waiting), Done (or Complete), and Cancelled or Archive (which never carry a ticked checkbox). Other lanes are left alone. Cards link to their note with a wikilink, `- [ ] [[Task title]]`.
 
-A task note has flat frontmatter (`Due By`, `Assigned to`, `Planned by`, `Tags`, `Completed On`) and top-level sections `# Summary`, `# Subtasks`, `# Detailed Plan`, `# Questions to Consider` and `# Running Log`. `%% ... %%` comments in the template are dropped from new notes.
+A task note has flat frontmatter (`Due By`, `Assigned to`, `Planned by`, `Tags`, `Completed On`) and top-level sections `# Summary`, `# Subtasks`, `# Detailed Plan`, `# Questions to Consider` and `# Running Log`. `%% ... %%` comments in the template are dropped from new notes. `Tags` is written as a YAML block list (one `  - tag` line each), because Obsidian only treats that form as a list; a comma-separated string is read for compatibility but reported by `audit_boards` as `tags_not_list`.
 
 ## Safety
 

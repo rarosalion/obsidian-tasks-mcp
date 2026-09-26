@@ -73,7 +73,8 @@ TOOLS = (
         "Read-only report of board drift: boards with no new-note-folder, notes with no card, "
         "cards linking to a missing note, "
         "duplicate cards, checkboxes that disagree with their lane, started tasks still in "
-        "To Do, and open-lane notes that do not follow the template. Cards without a link are "
+        "To Do, open-lane notes that do not follow the template, and notes (in any lane) whose "
+        "Tags are a plain string instead of a YAML list. Cards without a link are "
         "not reported. Fix findings with the other tools.",
         READ_ONLY,
     ),
@@ -113,7 +114,8 @@ TOOLS = (
     (
         "set_task_fields",
         "Set the frontmatter fields Due By, Assigned to, Planned by, Tags or Completed On on "
-        "a task note. Fields left out are unchanged.",
+        "a task note. Tags is a list of strings, written as a YAML block list. Fields left out "
+        "are unchanged.",
         None,
     ),
     (

@@ -194,7 +194,7 @@ class TaskService:
             entry = self._summary(hit, text)
             if assigned_to and (entry.get("assigned_to") or "").lower() != assigned_to.lower():
                 continue
-            if tag and tag.lower() not in (entry.get("tags") or "").lower():
+            if tag and tag.lstrip("#").lower() not in [t.lower() for t in entry.get("tags") or []]:
                 continue
             due = entry.get("due_by")
             if overdue and not (due and due < today and hit.kind not in ("done", "closed")):
@@ -216,10 +216,10 @@ class TaskService:
             for key, name in (
                 ("due_by", "Due By"),
                 ("assigned_to", "Assigned to"),
-                ("tags", "Tags"),
                 ("completed_on", "Completed On"),
             ):
                 entry[key] = frontmatter.get(text, name) or None
+            entry["tags"] = frontmatter.get_list(text, "Tags") or None
         return entry
 
     def get_task(self, title: str, board: str | None = None) -> dict:
@@ -252,7 +252,7 @@ class TaskService:
         assigned_to: str = "",
         planned_by: str = "Claude",
         due_by: str = "",
-        tags: str = "",
+        tags: list[str] | None = None,
     ) -> dict:
         title = title.strip()
         if not title or _BAD_TITLE.search(title):
@@ -284,8 +284,8 @@ class TaskService:
                 "Due By": due_by,
                 "Assigned to": assigned_to,
                 "Planned by": planned_by,
-                "Tags": tags,
             },
+            tags=tags,
             summary=summary,
             subtask_items=subtasks or [],
             detailed_plan=detailed_plan,
@@ -441,7 +441,7 @@ class TaskService:
         due_by: str | None = None,
         assigned_to: str | None = None,
         planned_by: str | None = None,
-        tags: str | None = None,
+        tags: list[str] | None = None,
         completed_on: str | None = None,
     ) -> dict:
         hit, path = self._note_for(title, board)
@@ -449,14 +449,19 @@ class TaskService:
             "Due By": due_by,
             "Assigned to": assigned_to,
             "Planned by": planned_by,
-            "Tags": tags,
             "Completed On": completed_on,
         }
-        applied = {k: v for k, v in changes.items() if v is not None}
+        applied: dict[str, Any] = {k: v for k, v in changes.items() if v is not None}
+        clean_tags = notes.normalize_tags(tags) if tags is not None else None
+        if clean_tags is not None:
+            applied["Tags"] = clean_tags
 
         def apply(text: str) -> str:
             for key, value in applied.items():
-                text = frontmatter.set_value(text, key, value)
+                if key == "Tags":
+                    text = frontmatter.set_list(text, key, value)
+                else:
+                    text = frontmatter.set_value(text, key, value)
             return text
 
         self._edit(path, apply)
@@ -524,6 +529,7 @@ class TaskService:
             "checkbox_mismatch": [],
             "started_but_in_todo": [],
             "template_problems": [],
+            "tags_not_list": [],
         }
         seen: dict[str, list[str]] = {}
         linked: dict[str, tuple[Hit, str]] = {}
@@ -570,6 +576,8 @@ class TaskService:
             found = notes.problems(text)
             if found and (include_closed or hit.kind not in ("done", "closed")):
                 report["template_problems"].append(f"{title}: {'; '.join(found)}")
+            if frontmatter.is_plain_string(text, "Tags"):
+                report["tags_not_list"].append(title)
             if hit.kind == "todo" and notes.progress(text)[0] > 0:
                 report["started_but_in_todo"].append(title)
         for lowered, path in listing.items():

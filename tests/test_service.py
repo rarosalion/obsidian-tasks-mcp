@@ -127,6 +127,14 @@ def test_move_to_done_keeps_an_existing_completion_date(service, vault):
     assert service.move_task("Beta Task", "Done")["completed_on"] == "2025-05-05"
 
 
+def test_move_to_done_stamps_over_a_yaml_null(service, vault):
+    vault.files["Tasks/Alpha Task.md"] = vault.files["Tasks/Alpha Task.md"].replace(
+        "Completed On:", "Completed On: null"
+    )
+    assert service.move_task("Alpha Task", "Done")["completed_on"] == "2026-09-25"
+    assert frontmatter.get(vault.files["Tasks/Alpha Task.md"], "Completed On") == "2026-09-25"
+
+
 def test_move_out_of_done_unchecks_and_keeps_date(service, vault):
     service.move_task("Epsilon Task", "In Progress")
     assert "- [ ] [[Epsilon Task]]" in vault.files["Board.md"]

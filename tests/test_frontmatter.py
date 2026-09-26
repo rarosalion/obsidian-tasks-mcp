@@ -35,3 +35,10 @@ def test_set_value_replaces_and_adds():
 
 def test_set_value_creates_frontmatter():
     assert frontmatter.set_value("# Body\n", "Key", "v") == "---\nKey: v\n---\n# Body\n"
+
+
+def test_get_treats_yaml_null_as_absent():
+    text = "---\nDue By: null\nTags: ~\nAssigned to: Sam\n---\nbody\n"
+    assert frontmatter.get(text, "Due By") is None
+    assert frontmatter.get(text, "Tags") is None
+    assert frontmatter.get(text, "Assigned to") == "Sam"

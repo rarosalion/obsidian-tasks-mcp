@@ -1,6 +1,7 @@
 import re
 
 _FENCE = re.compile(r"\A---[ \t]*\n(.*?\n)?---[ \t]*(?:\n|\Z)", re.DOTALL)
+_NULLS = {"null", "~"}
 
 
 def split(text: str) -> tuple[str, str]:
@@ -12,12 +13,13 @@ def split(text: str) -> tuple[str, str]:
 
 
 def get(text: str, key: str) -> str | None:
-    """Read a flat `Key: value` frontmatter entry, or None when absent."""
+    """Read a flat `Key: value` frontmatter entry, or None when absent or a YAML null."""
     front, _ = split(text)
     for line in front.splitlines():
         head, sep, value = line.partition(":")
         if sep and head.strip().lower() == key.lower():
-            return value.strip()
+            value = value.strip()
+            return None if value.lower() in _NULLS else value
     return None
 
 
